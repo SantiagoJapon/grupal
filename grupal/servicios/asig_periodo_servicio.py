@@ -1,23 +1,23 @@
-from ..modelos.estudiantes import Matricula
+from ..modelos.estudiantes import *
 from ..conexion.asig_periodo_conexion import *
 
-def servicio_asig_periodo():
-    matriculas = select_all()
-    print(matriculas)
-    return matriculas
+def servicio_asig_periodo_all():
+    valores = select_all()
+    print(valores)
+    return valores
 
 def servicio_consultar_codigo(codigo: str):
     if len(codigo) !=0:
-        matriculas = select_by_codigo(codigo)
-        print("mostramos la consulta: ", matriculas)
-        return matriculas
+        valoress = select_by_codigo(codigo)
+        print("mostramos la consulta: ", valoress)
+        return valoress
     else:
         return select_all()
     
-def servicio_crear_matricula(matricula: dict):
-    matricula = Matricula(**matricula)
-    print(matricula)
-    return crear_matricula(matricula)
+def servicio_crear_asig_periodo(asignatura_periodo: dict):
+    objeto = AsignaturaPeriodo(**asignatura_periodo)
+    print(objeto)
+    return crear_asignatura_periodo(objeto)
 
-def servicio_eliminar_matricula(id: int):
-    return eliminar_matricula(id)
+def servicio_eliminar_asig_periodo(id: int):
+    return servicio_eliminar_asig_periodo(id)

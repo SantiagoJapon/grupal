@@ -1,33 +1,37 @@
 import reflex as rx
 from grupal.modelos.estudiantes import Estudiantes
 from ..servicios.estudiante_servicio import *
+from ..servicios.user_service import servicio_crear_user
 
 class EstudianteState(rx.State):
     estudiantes : list[Estudiantes]
     buscar_cedula : str = ""
+    error_message: str = ""
 
-    rx.background
-    def get_todos_estudiantes(self):
-        self.estudiantes = servicio_estudiantes_all()
+    @rx.background
+    async def get_todos_estudiantes(self):
+        async with self:
+            self.estudiantes = servicio_estudiantes_all()
 
-    rx.background
-    def get_estudiante_cedula(self):
-        self.estudiantes = servicio_consultar_cedula(self.buscar_cedula)
+    @rx.background
+    async def get_estudiante_cedula(self):
+        async with self:
+            self.estudiantes = servicio_consultar_cedula(self.buscar_cedula)
     
     def buscar_onchange(self, value:str):
         self.buscar_cedula = value
 
-    # crear el metodo para guardar un registro en la bd
-    rx.background
-    def crear_estudiante(self, data:dict):
-        try:
-            self.estudiantes = servicio_crear_estudiante(
-                data['nombres'], data['apellidos'], data['cedula'],
-                data['correo'],data['celular'],data['direccion'],
-                data['fono']
+    @rx.background
+    async def crear_estudiante(self, data:dict):
+        async with self:
+            try:
+                self.estudiantes = servicio_crear_estudiante(
+                    data['nombres'], data['apellidos'], data['cedula'],
+                    data['correo'],data['celular'],data['direccion'],
+                    data['fono']
                 )
-        except Exception as e:
-            print(e)
+            except Exception as e:
+                print(e)
     
     @rx.background
     async def eliminar_estudiante(self, id: int):
@@ -38,8 +42,29 @@ class EstudianteState(rx.State):
             except Exception as e:
                 print(e)
 
+    @rx.background
+    async def agregar_cuenta(self, estudiante: Estudiantes):
+        async with self:
+            try:
+                print("Llegamos al boton agregar cuenta")
+                print(estudiante)
+                username = estudiante['correo']
+                password = estudiante['cedula']
+                servicio_crear_user(username, password, estudiante['id']	)
+                print("Usuario creado con éxito")
+            except Exception as e:
+                print(e)
 
-# pagina que muestre el listado de estudiantes que estan en la base de datos.
+    @rx.background
+    async def mostrar_modal_agregar_cuenta(self, estudiante: Estudiantes):
+        async with self:
+            try:
+                username = estudiante.correo
+                password = estudiante.cedula
+                rx.dialog.alert("Cuenta creada con éxito. El usuario es: " + username + " y el password es: " + password)
+            except Exception as e:
+                print(e)
+
 @rx.page(route="/estudiantes", title="Lista de Estudiantes", on_load=EstudianteState.get_todos_estudiantes)
 def estudiante_page() -> rx.Component:
     return rx.flex(
@@ -53,23 +78,18 @@ def estudiante_page() -> rx.Component:
             justify="center",
             align="center",
         ),
-        
-        #tablita con todos os datos de Estudiantes
         rx.vstack(
             buscar_estudiante_cedula(),
             dialog_estudiante_form(),
-            
             justify="center",
             style={"margin": "20px", 'width': "100%"},
         ),
         tabla_estudiantes(EstudianteState.estudiantes),
-        
         direction="column",
         justify="center",
         style={"margin": "auto", 'width': "80%"},
     )
 
-# crear el componen de tabla para lista de estudiantes
 def tabla_estudiantes(lista_estudiantes: list[Estudiantes]) -> rx.Component:
     return rx.table.root(
         rx.table.header(
@@ -97,6 +117,8 @@ def row_table(estudiante: Estudiantes) -> rx.Component:
         rx.table.cell(
             rx.hstack(
                 rx.button("Eliminar", on_click=lambda: EstudianteState.eliminar_estudiante(estudiante.id)),
+                rx.button("Agregar Cuenta", on_click=lambda: EstudianteState.agregar_cuenta(estudiante)),
+                
             )
         ),
     )
@@ -129,12 +151,11 @@ def dialog_estudiante_form() -> rx.Component:
                 margin_top="10px",
             ),
             style={"width": "400px"},
-            ),
-        )
-    
+        ),
+    )
 
 
-# a utiliza los componentes de un formulario
+
 def crear_estudiante_form() -> rx.Component:
     return rx.form(
         rx.vstack(
@@ -145,11 +166,12 @@ def crear_estudiante_form() -> rx.Component:
             rx.input(placeholder="# Celular", name="celular"),
             rx.input(placeholder="Direccion", name="direccion"),
             rx.input(placeholder="Telefono Casa", name="fono", style={"width": "100%"}, max_length=10),
-
             rx.dialog.close(
-                rx.button("Crear Estuiante", type="submit"),
+                rx.button("Crear Estudiante", type="submit"),
             ),
         ),
-
         on_submit=EstudianteState.crear_estudiante,
     )
+
+
+

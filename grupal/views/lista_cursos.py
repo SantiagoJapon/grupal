@@ -1,6 +1,7 @@
 import reflex as rx
 from grupal.modelos.cursos import ModeloCurso
 
+
 def tarjeta_curso(curso: ModeloCurso) -> rx.Component:
     return rx.card(
         rx.vstack(
